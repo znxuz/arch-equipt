@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 
+confirm()
+{
+    [[ -z "$1" ]] && echo "No prompt given." >&2 && return 1
+
+    read -rp "$1" ret
+    [[  -n "$ret" && "$ret" =~ [N|n] ]] && return 1
+    return 0
+}
+
 setup_dotfiles()
 {
-    read -rp "Setup dotfiles? (y|n)?: " ret
-    [[  -n "$ret" && "$ret" =~ [N|n] ]] && return
+    confirm "Setup dotfiles? (y|n)?: " || return
 
     [ -d "$HOME"/.dotfiles ] && echo "dotfiles already exist" && return
     src="$HOME"/dotfiles.tmp
@@ -20,8 +28,7 @@ setup_dotfiles()
 
 setup_aur()
 {
-    read -rp "Setup AUR with paru? (y|n)?: " ret
-    [[  -n "$ret" && "$ret" =~ [N|n] ]] && return
+    confirm "Setup AUR with paru? (y|n)?: " || return
 
     paru_git='/tmp/paru'
     git clone 'https://aur.archlinux.org/paru.git' "$paru_git" &&
@@ -30,8 +37,7 @@ setup_aur()
 
 symlink_etc_conf()
 {
-    read -rp "Setup /etc symlinks? (y|n)?: " ret
-    [[  -n "$ret" && "$ret" =~ [N|n] ]] && return
+    confirm "Setup /etc symlinks? (y|n)?: " || return
 
     [ ! -f /etc/udev/rules.d/95-battery.rules ] &&
 	sudo cp ~/.local/bin/polybar/95-battery.rules /etc/udev/rules.d/
@@ -51,40 +57,81 @@ symlink_etc_conf()
 
 install_cron()
 {
+    confirm "Install cron_file (y|n)?: " || return
+
     cron_file="${XDG_CONFIG_HOME:-$HOME/.config}/cron/cron_file"
-    read -rp "Install cron_file (y|n)?: " ret
     [[  -n "$ret" && "$ret" =~ [N|n] ]] && return
 
-    [[ -f "$cron_file" ]] && sudo crontab -u "$(whoami)" "$cron_file"
+    [[ -f "$cron_file" ]] && sudo crontab -u "$(whoami)" "$cron_file" &&
+	echo "Cron file installed"
 }
 
-setup_dropbox()
+install_dropbox()
 {
-    read -rp "Install dropbox (y|n)?: " ret
-    [[  -n "$ret" && "$ret" =~ [N|n] ]] && return
-    pacman -Q dropbox || paru -S --noconfirm dropbox || return
+    confirm "Install dropbox (y|n)?: " || return
+    pacman -Q dropbox &> /dev/null && echo "Dropbox already installed" >&2 && return
 
-    rm -rf ~/.dropbox-dist
-    install -dm0 ~/.dropbox-dist
+    paru -S --noconfirm dropbox &&
+	rm -rf ~/.dropbox-dist && install -dm0 ~/.dropbox-dist &&
+	echo "Dropbox installed" && return
+    echo "Dropbox installation failed" >&2 && return 1
 }
 
 install_pkg()
 {
+    confirm "Install packages from list (y|n)?: " || return
+
     native_pkg_list=$HOME/.config/misc/Qqen
     foreign_pkg_list=$HOME/.config/misc/Qqem
 
-    read -rp "Install packages from list (y|n)?: " ret
-    [[  -n "$ret" && "$ret" =~ [N|n] ]] ||
-	[[ ! -f $native_pkg_list ]] || 
-	[[ ! -f $foreign_pkg_list ]] && return
+    [[ ! -f $native_pkg_list ]] || [[ ! -f $foreign_pkg_list ]] && return
 
-    vim "$native_pkg_list" && cat "$native_pkg_list" | sudo pacman -S -
-    vim "$foreign_pkg_list" && paru -S - < "$foreign_pkg_list"
+    vim "$native_pkg_list" && cat "$native_pkg_list" | sudo pacman -S --noconfirm -
+    vim "$foreign_pkg_list" && paru -S --noconfirm - < "$foreign_pkg_list"
 }
 
-setup_dotfiles
-setup_aur
-symlink_etc_conf
-install_cron
-setup_dropbox
-install_pkg
+install_all()
+{
+    setup_dotfiles
+    setup_aur
+    symlink_etc_conf
+    install_cron
+    install_dropbox
+    install_pkg
+}
+
+main()
+{
+    [[ "$#" -eq 0 ]] && install_all
+
+    while getopts ":dascbp" opt; do
+	case ${opt} in
+	    d)
+		install_dropbox
+		;;
+	    a)
+		setup_aur
+		;;
+	    s)
+		symlink_etc_conf
+		;;
+	    c)
+		install_cron
+		;;
+	    b)
+		install_dropbox
+		;;
+	    p)
+		install_pkg
+		;;
+	    \?)
+		echo "Invalid option: -$OPTARG" >&2
+		exit 1
+		;;
+	esac
+    done
+
+    shift $((OPTIND -1))
+}
+
+main "$@"
