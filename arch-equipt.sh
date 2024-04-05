@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-confirm()
+prompt()
 {
     [[ -z "$1" ]] && echo "No prompt given." >&2 && return 1
 
@@ -11,7 +11,7 @@ confirm()
 
 setup_dotfiles()
 {
-    confirm "Setup dotfiles? (y|n)?: " || return
+    prompt "Setup dotfiles? (y|n)?: " || return
 
     [ -d "$HOME"/.dotfiles ] && echo "dotfiles already exist" && return
     src="$HOME"/dotfiles.tmp
@@ -26,9 +26,28 @@ setup_dotfiles()
     cp -f "$HOME/.config/alacritty/window.toml.template" "$HOME/.config/alacritty/window.toml"
 }
 
+enable_systemctl_services()
+{
+    prompt "Enable systemctl services? (y|n)?: " || return
+
+    unit_files="$HOME/.config/misc/systemd-unit-files"
+    tail -n+2 "$unit_files" | head -n-2 | awk '{print $1}' |
+	while read -r service; do
+	    systemctl is-active --quiet "$service" && continue
+	    expect <<- DONE
+	    set timeout -1
+	    spawn systemctl enable --now "$service"
+	    expect "*?assword:*"
+	    send -- "$(pass user-z)"
+	    send -- "\r"
+	    expect eof
+	DONE
+    done
+}
+
 setup_aur()
 {
-    confirm "Setup AUR with paru? (y|n)?: " || return
+    prompt "Setup AUR with paru? (y|n)?: " || return
 
     paru_git='/tmp/paru'
     sudo rm -rf "$paru_git"
@@ -38,7 +57,7 @@ setup_aur()
 
 symlink_etc_conf()
 {
-    confirm "Setup /etc symlinks? (y|n)?: " || return
+    prompt "Setup /etc symlinks? (y|n)?: " || return
 
     [ ! -f /etc/udev/rules.d/95-battery.rules ] &&
 	sudo cp ~/.local/bin/polybar/95-battery.rules /etc/udev/rules.d/
@@ -58,7 +77,7 @@ symlink_etc_conf()
 
 install_cron()
 {
-    confirm "Install cron_file (y|n)?: " || return
+    prompt "Install cron_file (y|n)?: " || return
 
     cron_file="${XDG_CONFIG_HOME:-$HOME/.config}/cron/cron_file"
     [[  -n "$ret" && "$ret" =~ [N|n] ]] && return
@@ -69,7 +88,7 @@ install_cron()
 
 install_dropbox()
 {
-    confirm "Install dropbox (y|n)?: " || return
+    prompt "Install dropbox (y|n)?: " || return
     pacman -Q dropbox &> /dev/null && echo "Dropbox already installed" >&2 && return
 
     paru -S --noconfirm dropbox &&
@@ -80,7 +99,7 @@ install_dropbox()
 
 install_pkg()
 {
-    confirm "Install packages from list (y|n)?: " || return
+    prompt "Install packages from list (y|n)?: " || return
 
     native_pkg_list=$HOME/.config/misc/Qqen
     foreign_pkg_list=$HOME/.config/misc/Qqem
@@ -94,6 +113,7 @@ install_pkg()
 install_all()
 {
     setup_dotfiles
+    enable_systemctl_services
     setup_aur
     symlink_etc_conf
     install_dropbox
