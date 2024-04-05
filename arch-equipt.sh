@@ -31,8 +31,9 @@ setup_aur()
     confirm "Setup AUR with paru? (y|n)?: " || return
 
     paru_git='/tmp/paru'
+    sudo rm -rf "$paru_git"
     git clone 'https://aur.archlinux.org/paru.git' "$paru_git" &&
-	cd "$paru_git" && yes | makepkg -sirc && rm -rf "$paru_git"
+	cd "$paru_git" && makepkg -sirc --noconfirm && rm -rf "$paru_git"
 }
 
 symlink_etc_conf()
@@ -86,8 +87,8 @@ install_pkg()
 
     [[ ! -f $native_pkg_list ]] || [[ ! -f $foreign_pkg_list ]] && return
 
-    vim "$native_pkg_list" && cat "$native_pkg_list" | sudo pacman -S --noconfirm -
-    vim "$foreign_pkg_list" && paru -S --noconfirm - < "$foreign_pkg_list"
+    vim "$native_pkg_list" && cat "$native_pkg_list" | sudo pacman -S --noconfirm --needed -
+    vim "$foreign_pkg_list" && paru -S --noconfirm --needed - < "$foreign_pkg_list"
 }
 
 install_all()
@@ -95,9 +96,9 @@ install_all()
     setup_dotfiles
     setup_aur
     symlink_etc_conf
-    install_cron
     install_dropbox
     install_pkg
+    install_cron
 }
 
 main()
