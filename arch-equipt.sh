@@ -86,17 +86,6 @@ install_cron()
 	echo "Cron file installed"
 }
 
-install_dropbox()
-{
-    prompt "Install dropbox (y|n)?: " || return
-    pacman -Q dropbox &> /dev/null && echo "Dropbox already installed" >&2 && return
-
-    paru -S --noconfirm dropbox &&
-	rm -rf ~/.dropbox-dist && install -dm0 ~/.dropbox-dist &&
-	echo "Dropbox installed" && return
-    echo "Dropbox installation failed" >&2 && return 1
-}
-
 install_pkg()
 {
     prompt "Install packages from list (y|n)?: " || return
@@ -108,6 +97,18 @@ install_pkg()
 
     vim "$native_pkg_list" && cat "$native_pkg_list" | sudo pacman -S --noconfirm --needed -
     vim "$foreign_pkg_list" && paru -S --noconfirm --needed - < "$foreign_pkg_list"
+}
+
+install_dropbox()
+{
+    prompt "Install dropbox (y|n)?: " || return
+    pacman -Q dropbox &> /dev/null && echo "Dropbox already installed" >&2 && return
+
+    paru -S --noconfirm dropbox &&
+	rm -rf ~/.dropbox-dist && install -dm0 ~/.dropbox-dist &&
+	attr -s com.dropbox.ignored -V 1 ~/Dropbox/books/Audiobooks &&
+	echo "Dropbox installed" && return
+    echo "Dropbox installation failed" >&2 && return 1
 }
 
 install_all()
