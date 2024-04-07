@@ -66,12 +66,11 @@ symlink_etc_conf()
     configs=$(find "$path" -type f)
 
     for src in $configs; do
-	target="$(echo "$src" | sed "s;$HOME/.config;;")"
+	target="${src//$HOME\/.config/}"
 	dir="$(dirname "$target")"
-	[ ! -d "$dir" ] && sudo mkdir "$dir" &&
-	    echo "=> mkdir $dir"
-	echo "=> force symlink $src to $target"
-	sudo ln -sf "$src" "$target"
+	[ ! -d "$dir" ] && sudo mkdir -p "$dir" && echo "=> mkdir -p $dir"
+	[ -f "$target" ] && sudo mv "$target" "$target.arch-equipt.bak"
+	sudo cp "$src" "$target" && echo "=> copied $src to $target"
     done
 }
 
