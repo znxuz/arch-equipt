@@ -4,14 +4,14 @@ prompt()
 {
     [[ -z "$1" ]] && echo "No prompt given." >&2 && return 1
 
-    read -rp "$1" ret
+    read -rp "$1 (y|n)?: " ret
     [[  -n "$ret" && "$ret" =~ [N|n] ]] && return 1
     return 0
 }
 
 setup_dotfiles()
 {
-    prompt "Setup dotfiles? (y|n)?: " || return
+    prompt "Setup dotfiles" || return
 
     [ -d "$HOME"/.dotfiles ] && echo "dotfiles already exist" && return
     src="$HOME"/dotfiles.tmp
@@ -28,7 +28,7 @@ setup_dotfiles()
 
 enable_systemctl_services()
 {
-    prompt "Enable systemctl services? (y|n)?: " || return
+    prompt "Enable systemctl services" || return
 
     unit_files="$HOME/.config/misc/systemd-unit-files"
     tail -n+2 "$unit_files" | head -n-2 | awk '{print $1}' |
@@ -47,7 +47,7 @@ enable_systemctl_services()
 
 setup_aur()
 {
-    prompt "Setup AUR with paru? (y|n)?: " || return
+    prompt "Setup AUR with paru" || return
 
     paru_git='/tmp/paru'
     sudo rm -rf "$paru_git"
@@ -55,9 +55,9 @@ setup_aur()
 	cd "$paru_git" && makepkg -sirc --noconfirm && rm -rf "$paru_git"
 }
 
-symlink_etc_conf()
+cp_etc_conf()
 {
-    prompt "Setup /etc symlinks? (y|n)?: " || return
+    prompt "Setup /etc config files" || return
 
     [ ! -f /etc/udev/rules.d/95-battery.rules ] &&
 	sudo cp ~/.local/bin/polybar/95-battery.rules /etc/udev/rules.d/
@@ -69,14 +69,21 @@ symlink_etc_conf()
 	target="${src//$HOME\/.config/}"
 	dir="$(dirname "$target")"
 	[ ! -d "$dir" ] && sudo mkdir -p "$dir" && echo "=> mkdir -p $dir"
-	[ -f "$target" ] && sudo mv "$target" "$target.arch-equipt.bak"
+	if [ -f "$target" ]; then
+	    if prompt "$target exists, still proceed?"; then
+		sudo mv "$target" "$target.arch-equipt.bak"
+	    else
+		continue
+	    fi
+	fi
+
 	sudo cp "$src" "$target" && echo "=> copied $src to $target"
     done
 }
 
 install_cron()
 {
-    prompt "Install cron_file (y|n)?: " || return
+    prompt "Install cron_file" || return
 
     cron_file="${XDG_CONFIG_HOME:-$HOME/.config}/cron/cron_file"
     [[  -n "$ret" && "$ret" =~ [N|n] ]] && return
@@ -87,7 +94,7 @@ install_cron()
 
 install_pkg()
 {
-    prompt "Install packages from list (y|n)?: " || return
+    prompt "Install packages from list" || return
 
     native_pkg_list=$HOME/.config/misc/Qqen
     foreign_pkg_list=$HOME/.config/misc/Qqem
@@ -100,7 +107,7 @@ install_pkg()
 
 install_dropbox()
 {
-    prompt "Install dropbox (y|n)?: " || return
+    prompt "Install dropbox" || return
     pacman -Q dropbox &> /dev/null && echo "Dropbox already installed" >&2 && return
 
     paru -S --noconfirm dropbox &&
@@ -113,9 +120,9 @@ install_dropbox()
 install_all()
 {
     setup_dotfiles
+    cp_etc_conf
     enable_systemctl_services
     setup_aur
-    symlink_etc_conf
     install_dropbox
     install_pkg
     install_cron
@@ -134,7 +141,7 @@ main()
 		setup_aur
 		;;
 	    s)
-		symlink_etc_conf
+		cp_etc_conf
 		;;
 	    c)
 		install_cron
