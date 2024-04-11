@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+print_help()
+{
+    cat <<EOF
+Usage: $(basename "$0") [-dascbph]
+
+Options:
+  -d     Install Dropbox
+  -a     Setup AUR with Paru
+  -s     Setup /etc config files
+  -c     Install cron jobs
+  -b     Install Dropbox
+  -p     Install packages from lists
+  -h     Display this help message
+EOF
+}
+
 prompt()
 {
     [[ -z "$1" ]] && echo "No prompt given." >&2 && return 1
@@ -42,7 +58,7 @@ enable_systemctl_services()
 	    send -- "\r"
 	    expect eof
 	DONE
-    done
+	done
 }
 
 setup_aur()
@@ -58,9 +74,6 @@ setup_aur()
 cp_etc_conf()
 {
     prompt "Setup /etc config files" || return
-
-    [ ! -f /etc/udev/rules.d/95-battery.rules ] &&
-	sudo cp ~/.local/bin/polybar/95-battery.rules /etc/udev/rules.d/
 
     path="$HOME/.config/etc"
     configs=$(find "$path" -type f)
@@ -132,8 +145,11 @@ main()
 {
     [[ "$#" -eq 0 ]] && install_all
 
-    while getopts ":dascbp" opt; do
+    while getopts ":dascbph" opt; do
 	case ${opt} in
+	    h)
+		print_help; exit
+		;;
 	    d)
 		install_dropbox
 		;;
