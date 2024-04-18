@@ -145,12 +145,15 @@ main()
 {
     [[ "$#" -eq 0 ]] && install_all
 
-    while getopts ":dascbph" opt; do
+    while getopts ":dDascbph" opt; do
 	case ${opt} in
 	    h)
 		print_help; exit
 		;;
 	    d)
+		setup_dotfiles
+		;;
+	    D)
 		install_dropbox
 		;;
 	    a)
