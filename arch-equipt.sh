@@ -147,7 +147,7 @@ main()
 {
     [[ "$#" -eq 0 ]] && install_all
 
-    while getopts ":dDascbph" opt; do
+    while getopts ":dascbph" opt; do
 	case ${opt} in
 	    h)
 		print_help; exit
