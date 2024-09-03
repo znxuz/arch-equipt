@@ -6,7 +6,7 @@ print_help()
 Usage: $(basename "$0") [-dascbph]
 
 Options:
-  -d     Install Dropbox
+  -d     Setup dotfiles
   -a     Setup AUR with Paru
   -s     Setup /etc config files
   -c     Install cron jobs
@@ -39,7 +39,9 @@ setup_dotfiles()
 	config --local status.showUntrackedFiles no
 
     # extra config for alcty-padding
-    cp -f "$HOME/.config/alacritty/window.toml.template" "$HOME/.config/alacritty/window.toml"
+    [[ $? -eq 0 ]] &&
+	    cp -f "$HOME/.config/alacritty/window.toml.template" \
+	    "$HOME/.config/alacritty/window.toml"
 }
 
 enable_systemctl_services()
@@ -152,9 +154,6 @@ main()
 		;;
 	    d)
 		setup_dotfiles
-		;;
-	    D)
-		install_dropbox
 		;;
 	    a)
 		setup_aur
