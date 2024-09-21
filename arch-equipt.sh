@@ -123,27 +123,17 @@ install_pkg()
 install_dropbox()
 {
 	prompt "Install dropbox" || return
+
 	if pacman -Q dropbox &> /dev/null; then
 		echo "Dropbox already installed" >&2
-		prompt "Setup dropbox attributes" || return
-	else
-		if ! paru -S --noconfirm dropbox; then
-			echo "Installing Dropbox failed" >&2
-			return
-		fi
-		echo "Dropbox installed" && return
+		return
 	fi
 
-	rm -rf ~/.dropbox-dist; install -dm0 ~/.dropbox-dist
-	ignore_dirs=(\
-		"$HOME/Dropbox/books/Audiobooks" \
-		"$HOME/Dropbox/Documents/WeChat_Data" \
-	)
-
-	for dir in "${ignore_dirs[@]}"; do
-		[[ ! -d "$dir" ]] && mkdir -p "$dir"
-		attr -s com.dropbox.ignored -V 1 "$dir"
-	done
+	if ! paru -S --noconfirm dropbox; then
+		echo "Installing Dropbox failed" >&2
+		return
+	fi
+	echo "Dropbox installed" && return
 }
 
 install_all()
