@@ -67,10 +67,10 @@ setup_aur()
 {
 	prompt "Setup AUR with paru" || return
 
-	paru_git='/tmp/paru'
-	sudo rm -rf "$paru_git"
-	git clone 'https://aur.archlinux.org/paru.git' "$paru_git" &&
-		cd "$paru_git" && makepkg -sirc --noconfirm && rm -rf "$paru_git"
+	paru_bin='/tmp/paru'
+	sudo rm -rf "$paru_bin"
+	git clone 'https://aur.archlinux.org/paru-bin.git' "$paru_bin" &&
+		cd "$paru_bin" && makepkg -sirc --noconfirm && rm -rf "$paru_bin"
 }
 
 cp_etc_conf()
@@ -116,8 +116,8 @@ install_pkg()
 
 	[[ ! -f $native_pkg_list ]] || [[ ! -f $foreign_pkg_list ]] && return
 
-	vim "$native_pkg_list" && cat "$native_pkg_list" | sudo pacman -S --noconfirm --needed -
-	vim "$foreign_pkg_list" && paru -S --noconfirm --needed - < "$foreign_pkg_list"
+	vim "$native_pkg_list" "$foreign_pkg_list" &&
+		cat "$foreign_pkg_list" "$native_pkg_list" | paru -S --noconfirm --needed -
 }
 
 install_dropbox()
