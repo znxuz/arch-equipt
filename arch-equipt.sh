@@ -48,11 +48,11 @@ enable_systemctl_services()
 {
 	prompt "Enable systemctl services" || return
 
-	unit_files=$(tail -n+2 "$HOME"/.config/misc/systemd-unit-files | head -n-2 | awk '{print $1}')
-	unit_files_user=$(tail -n+2 "$HOME"/.config/misc/systemd-unit-files-user | head -n-2 | awk '{print $1}')
+	unit_files="$(tail -n+2 "$HOME"/.config/misc/systemd-unit-files | head -n-2 | awk '{print $1}')"
+	unit_files_user="$(tail -n+2 "$HOME"/.config/misc/systemd-unit-files-user | head -n-2 | awk '{print $1}')"
 
-	systemctl enable "$unit_files"
-	systemctl --user enable "$unit_files_user"
+	systemctl enable $unit_files
+	systemctl --user enable $unit_files_user
 }
 
 setup_aur()
