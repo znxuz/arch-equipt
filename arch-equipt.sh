@@ -48,19 +48,11 @@ enable_systemctl_services()
 {
 	prompt "Enable systemctl services" || return
 
-	unit_files="$HOME/.config/misc/systemd-unit-files"
-	tail -n+2 "$unit_files" | head -n-2 | awk '{print $1}' |
-			while read -r service; do
-				systemctl is-active --quiet "$service" && continue
-				expect <<- DONE
-			set timeout -1
-			spawn systemctl enable --now "$service"
-			expect "*?assword:*"
-			send -- "$(pass user-z)"
-			send -- "\r"
-			expect eof
-		DONE
-	done
+	unit_files=$(tail -n+2 "$HOME"/.config/misc/systemd-unit-files | head -n-2 | awk '{print $1}')
+	unit_files_user=$(tail -n+2 "$HOME"/.config/misc/systemd-unit-files-user | head -n-2 | awk '{print $1}')
+
+	systemctl enable "$unit_files"
+	systemctl --user enable "$unit_files_user"
 }
 
 setup_aur()
